@@ -1,0 +1,58 @@
+// Production-ready schema for SQLite
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id          String      @id @default(uuid())
+  email       String      @unique
+  password    String
+  role        String      @default("user")
+  profilePic  String?
+  complaints  Complaint[]
+  comments    Comment[]
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+}
+
+model Category {
+  id          String      @id @default(uuid())
+  name        String      @unique
+  description String?
+  color       String      @default("#3B82F6")
+  complaints  Complaint[]
+  createdAt   DateTime    @default(now())
+}
+
+model Complaint {
+  id            String     @id @default(uuid())
+  title         String
+  description   String
+  categoryId    String
+  imageUrl      String?
+  imagePublicId String?
+  status        String     @default("pending")
+  priority      String     @default("medium")
+  userId        String
+  user          User       @relation(fields: [userId], references: [id])
+  category      Category   @relation(fields: [categoryId], references: [id])
+  comments      Comment[]
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+}
+
+model Comment {
+  id          String   @id @default(uuid())
+  text        String
+  complaintId String
+  userId      String
+  complaint   Complaint @relation(fields: [complaintId], references: [id])
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+}
+
