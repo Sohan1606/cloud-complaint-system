@@ -2,7 +2,7 @@ const fs = require('fs');
 const { prisma } = require('../lib/prisma');
 
 // Create complaint
-exports.createComplaint = async (req, res) => {
+const createComplaint = async (req, res) => {
   try {
     const { title, description } = req.body;
     const userId = req.user.userId;
@@ -16,7 +16,6 @@ exports.createComplaint = async (req, res) => {
         const result = await cloudinary.uploader.upload(req.file.path);
         imagePublicId = result.public_id;
         imageUrl = result.secure_url;
-        
         // Cleanup temp file
         fs.unlinkSync(req.file.path);
       } catch (cloudError) {
@@ -48,7 +47,7 @@ exports.createComplaint = async (req, res) => {
 };
 
 // Get all complaints
-exports.getComplaints = async (req, res) => {
+const getComplaints = async (req, res) => {
   try {
     let complaints;
     if (req.user.role === 'admin') {
@@ -78,7 +77,7 @@ exports.getComplaints = async (req, res) => {
 };
 
 // Get stats
-exports.getStats = async (req, res) => {
+const getStats = async (req, res) => {
   try {
     const userId = req.user.userId;
     const total = await prisma.complaint.count({ where: { userId } });
@@ -93,7 +92,7 @@ exports.getStats = async (req, res) => {
 };
 
 // Update complaint status (admin only)
-exports.updateStatus = async (req, res) => {
+const updateStatus = async (req, res) => {
   try {
     if (req.user.role !== 'admin') {
       return res.status(403).json({ message: 'Admin access required' });
@@ -120,7 +119,7 @@ exports.updateStatus = async (req, res) => {
 };
 
 // Get user complaints
-exports.getUserComplaints = async (req, res) => {
+const getUserComplaints = async (req, res) => {
   try {
     const complaints = await prisma.complaint.findMany({
       where: { userId: req.user.userId },

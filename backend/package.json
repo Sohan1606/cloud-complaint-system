@@ -4,7 +4,8 @@
   "description": "Production-ready Cloud Complaint Backend",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js",
+"start":"npx prisma generate && node server.js",
+
     "dev": "nodemon server.js",
     "db:generate": "prisma generate",
     "db:push": "prisma db push",

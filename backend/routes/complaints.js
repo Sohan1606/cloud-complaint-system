@@ -1,7 +1,7 @@
 const express = require('express');
 const multer = require('multer');
 // Cloudinary handled in controller
-const { createComplaint, getComplaints, updateStatus, getUserComplaints } = require('../controllers/complaintController');
+const { createComplaint, getComplaints, getStats, updateStatus, getUserComplaints } = require('../controllers/complaintController');
 const { protect, authorize } = require('../middleware/auth');
 
 const router = express.Router();
@@ -18,9 +18,7 @@ router.get('/my-complaints', getUserComplaints);
 
 // Get all complaints (admin & user dashboard)
 router.get('/', getComplaints);
-router.get('/stats', (req, res) => {
-  res.json({ total: 0, pending: 0, resolved: 0 });
-});
+router.get('/stats', getStats);
 
 
 // Update status (admin only)
