@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNotification } from '../context/NotificationContext';
-import { User, Mail, Shield, FileText, Calendar, Plus } from 'lucide-react';
+import { User, FileText, Calendar, Plus } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import api from '../services/api';
 
 
 const Profile = () => {
@@ -16,7 +16,7 @@ const Profile = () => {
   const fetchStats = useCallback(async () => {
     try {
       if (!user) return;
-      const res = await axios.get('/api/complaints/stats');
+const res = await api.get('/complaints/stats');
       setStats(res.data);
     } catch (error) {
       addNotification('Failed to load stats', 'error');
@@ -71,9 +71,11 @@ const Profile = () => {
               <Calendar className="w-6 h-6 text-yellow-600 mr-3" />
               <h3 className="font-semibold text-slate-900 dark:text-slate-100">Pending</h3>
             </div>
+
             <div className="text-2xl font-bold text-slate-900 dark:text-slate-100">
-              {stats.pending}
+              {stats.inProgress}
             </div>
+
           </div>
           <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-lg border border-slate-100 dark:border-slate-700">
             <div className="flex items-center mb-2">
