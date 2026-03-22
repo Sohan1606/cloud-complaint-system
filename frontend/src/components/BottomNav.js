@@ -2,11 +2,10 @@ import React from 'react';
 import { Home, Plus, User } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import clsx from 'clsx';
-import { useAuth } from '../context/AuthContext';
 
 const BottomNav = () => {
   const location = useLocation();
-  const { user } = useAuth();
+  // const { user } = useAuth();
 
   const navItems = [
     {

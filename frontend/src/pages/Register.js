@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { useNotification } from '../context/NotificationContext';
+// import { useNotification } from '../context/NotificationContext';
 
 const Register = () => {
   const [email, setEmail] = useState('');

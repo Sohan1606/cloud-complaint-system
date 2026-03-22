@@ -1,7 +1,6 @@
 import React from 'react';
 import { ArrowLeft, Home } from 'lucide-react';
-import { useNavigate, useLocation } from 'react-router-dom';
-import clsx from 'clsx';
+// import clsx from 'clsx';
 
 const BackButton = ({ navigate }) => {
   return (

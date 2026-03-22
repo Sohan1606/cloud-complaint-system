@@ -15,7 +15,7 @@ const notificationReducer = (state, action) => {
 };
 
 export const NotificationProvider = ({ children }) => {
-  const [_, dispatch] = useReducer(notificationReducer, []);
+const [, dispatch] = useReducer(notificationReducer, []);
 
 
   const addNotification = (message, type = 'success') => {

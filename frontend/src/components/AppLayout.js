@@ -1,6 +1,5 @@
 import React from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { useNotification } from '../context/NotificationContext';
 import { Toaster } from 'react-hot-toast';
 import Navbar from './Navbar';
 import BottomNav from './BottomNav';
@@ -9,7 +8,7 @@ import BackButton from './BackButton';
 const AppLayout = ({ children }) => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { addNotification } = useNotification();
+  // const { addNotification } = useNotification();
 
   // Show back button except on home/login/register
   const showBackButton = !['/', '/login', '/register'].includes(location.pathname);
