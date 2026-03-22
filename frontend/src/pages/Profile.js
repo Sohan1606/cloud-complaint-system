@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNotification } from '../context/NotificationContext';
-import { User, FileText, Calendar, Plus } from 'lucide-react';
+import { User, FileText, Calendar, Plus, Shield, Mail } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
 
