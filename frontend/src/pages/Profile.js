@@ -1,7 +1,7 @@
+import { User, FileText, Calendar, Plus, Shield, Mail } from "lucide-react";
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNotification } from '../context/NotificationContext';
-import { User, FileText, Calendar, Plus, Shield, Mail } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
 
@@ -10,7 +10,12 @@ const Profile = () => {
   const { user } = useAuth();
   const { addNotification } = useNotification();
   const navigate = useNavigate();
-  const [stats, setStats] = useState({ total: 0, pending: 0, resolved: 0 });
+const [stats, setStats] = useState({ 
+  total: 0, 
+  pending: 0, 
+  inProgress: 0, 
+  resolved: 0 
+});
   const [loading, setLoading] = useState(true);
 
   const fetchStats = useCallback(async () => {
