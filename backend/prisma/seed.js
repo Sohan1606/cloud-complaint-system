@@ -15,7 +15,23 @@ async function main() {
     }
   });
 
-  console.log('Admin user created: admin@example.com / admin123');
+  // Seed categories
+  const categories = [
+    { name: 'Infrastructure', color: '#EF4444' },
+    { name: 'Service', color: '#3B82F6' },
+    { name: 'Billing', color: '#10B981' },
+    { name: 'Technical', color: '#F59E0B' }
+  ];
+
+  for (const cat of categories) {
+    await prisma.category.upsert({
+      where: { name: cat.name },
+      update: {},
+      create: cat
+    });
+  }
+
+  console.log('Admin user and categories seeded');
 }
 
 main()

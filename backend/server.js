@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
+const { prisma } = require('./lib/prisma');
 
 dotenv.config();
 
@@ -24,7 +25,17 @@ app.use('/api/auth', authLimiter);
 app.use('/api/complaints', apiLimiter);
 
 // Health check
-app.get('/health', (req, res) => res.json({ status: 'OK', timestamp: new Date() }));
+app.get('/health', async (req, res) => {
+  try {
+    await prisma.$queryRaw`SELECT 1`;
+    res.json({ status: 'OK', db: 'connected', timestamp: new Date() });
+  } catch (error) {
+    res.status(500).json({ status: 'DB Error', timestamp: new Date() });
+  }
+});
+
+// Cloud-native healthz
+app.get('/healthz', (req, res) => res.json({ status: 'healthy' }));
 
 // Routes
 app.use('/api/auth', require('./routes/auth'));
@@ -40,16 +51,20 @@ app.use((err, req, res, next) => {
 
 const PORT = process.env.PORT || 5000;
 
-if (!process.env.DATABASE_URL) {
-  console.error('DATABASE_URL not set!');
-  process.exit(1);
-}
+async function main() {
+  if (!process.env.DATABASE_URL) {
+    console.error('DATABASE_URL not set!');
+    process.exit(1);
+  }
 
-if (!process.env.JWT_SECRET) {
-  console.error('JWT_SECRET not set!');
-  process.exit(1);
-}
+  if (!process.env.JWT_SECRET) {
+    console.error('JWT_SECRET not set!');
+    process.exit(1);
+  }
 
+  await prisma.$connect();
+  console.log('✅ Prisma connected to database');
+}
 
 const cleanupUploads = require('./utils/cleanup');
 
@@ -60,9 +75,11 @@ process.on('SIGTERM', async () => {
   process.exit(0);
 });
 
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-  console.log(`Health: http://localhost:${PORT}/health`);
+app.listen(PORT, async () => {
+  await main();
+  console.log(`🚀 Server running on port ${PORT}`);
+  console.log(`📊 Health: http://localhost:${PORT}/health`);
   cleanupUploads(); // Initial cleanup
 });
+
 

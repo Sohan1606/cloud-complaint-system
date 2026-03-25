@@ -24,18 +24,18 @@ const createComplaint = async (req, res) => {
       }
     }
 
+    // Get default category
+    const defaultCategory = await prisma.category.findFirst();
+    const categoryIdVal = req.body.categoryId || defaultCategory?.id;
+
     const complaint = await prisma.complaint.create({
       data: {
         title,
         description,
+        categoryId: categoryIdVal,
         imageUrl,
         imagePublicId,
         userId
-      },
-      include: {
-        user: {
-          select: { email: true }
-        }
       }
     });
 
