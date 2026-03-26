@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useReducer, useEffect } from 'react';
-import axios from 'axios';
+import api from '../services/api';
 
 const AuthContext = createContext();
 
@@ -37,20 +37,14 @@ export const AuthProvider = ({ children }) => {
   });
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (token) {
-      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-      // Load user data
-      // axios.get('/api/auth/me').then(res => dispatch({type: 'LOAD_USER', payload: res.data}));
-    }
+    // API interceptor handles token
   }, []);
 
   const login = async (email, password) => {
     try {
-      const res = await axios.post('/api/auth/login', { email, password });
+      const res = await api.post('/auth/login', { email, password });
       const { token, user } = res.data;
       localStorage.setItem('token', token);
-      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
       dispatch({ type: 'LOGIN_SUCCESS', payload: { token, user } });
       return res.data;
     } catch (error) {

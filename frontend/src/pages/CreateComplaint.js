@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import axios from 'axios';
+import api from '../../services/api';
 import { useNavigate } from 'react-router-dom';
 
 const CreateComplaint = () => {
@@ -27,7 +27,7 @@ const CreateComplaint = () => {
     }
 
     try {
-      await axios.post('/api/complaints', data, {
+      await api.post('/complaints', data, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
       setSuccess('Complaint created successfully!');

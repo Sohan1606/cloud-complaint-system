@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../../services/api';
 import ComplaintCard from '../components/ComplaintCard';
 
 const AdminDashboard = () => {
@@ -13,7 +13,7 @@ const AdminDashboard = () => {
 
   const fetchComplaints = async () => {
     try {
-      const res = await axios.get('/api/complaints');
+      const res = await api.get('/complaints');
       setComplaints(res.data);
     } catch (err) {
       setError('Failed to fetch complaints');
@@ -24,7 +24,7 @@ const AdminDashboard = () => {
 
   const updateStatus = async (id, status) => {
     try {
-      await axios.put(`/api/complaints/${id}/status`, { status });
+      await api.put(`/complaints/${id}/status`, { status });
       fetchComplaints(); // Refresh
     } catch (err) {
       alert('Failed to update status');
