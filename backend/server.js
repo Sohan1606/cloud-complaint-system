@@ -26,6 +26,7 @@ app.use(morgan('combined'));
 app.use(express.static('public'));
 app.use('/api/auth', authLimiter);
 app.use('/api/complaints', apiLimiter);
+app.use('/api/stats', require('./routes/stats'));
 
 // Health check
 app.get('/health', async (req, res) => {
