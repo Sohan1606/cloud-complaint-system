@@ -37,6 +37,10 @@ app.get('/health', async (req, res) => {
   }
 });
 
+app.get('/', (req, res) => {
+  res.send('Cloud Complaint System API is running 🚀');
+});
+
 // Cloud-native healthz
 app.get('/healthz', (req, res) => res.json({ status: 'healthy' }));
 
