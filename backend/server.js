@@ -9,10 +9,8 @@ const app = express();
 
 app.set('trust proxy', 1);
 
-
 // Middleware
 app.use(cors({ origin: '*' }));
-
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -26,7 +24,6 @@ app.use(morgan('combined'));
 app.use(express.static('public'));
 app.use('/api/auth', authLimiter);
 app.use('/api/complaints', apiLimiter);
-app.use('/api/stats', require('./routes/stats'));
 
 // Health check
 app.get('/health', async (req, res) => {
@@ -48,8 +45,8 @@ app.get('/healthz', (req, res) => res.json({ status: 'healthy' }));
 // Routes
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/complaints', require('./routes/complaints'));
-
-console.log('Production backend ready!');
+app.use('/api/stats', require('./routes/stats'));
+app.use('/stats', require('./routes/stats'));
 
 // Error handling
 app.use((err, req, res, next) => {
@@ -72,6 +69,50 @@ async function main() {
 
   await prisma.$connect();
   console.log('✅ Prisma connected to database');
+
+  // In main() function, after "✅ Prisma connected to database"
+console.log('🌱 Running seed script...');
+try {
+  await require('./prisma/seed.js').main();
+  console.log('✅ Seed complete');
+} catch (seedError) {
+  console.log('Seed skipped (data may already exist)');
+}
+
+  // 🌱 SEED CATEGORIES ON STARTUP (fixes foreign key error)
+  console.log('🌱 Seeding default categories...');
+  try {
+    await prisma.category.upsert({
+      where: { name: 'General' },
+      update: {},
+      create: { name: 'General', color: '#3B82F6' }
+    });
+    await prisma.category.upsert({
+      where: { name: 'Technical' },
+      update: {},
+      create: { name: 'Technical', color: '#10B981' }
+    });
+    await prisma.category.upsert({
+      where: { name: 'Billing' },
+      update: {},
+      create: { name: 'Billing', color: '#F59E0B' }
+    });
+    console.log('✅ Default categories seeded');
+  } catch (seedError) {
+    console.log('Seed skipped (categories may already exist)');
+  }
+
+  // Seed admin user if needed
+  await prisma.user.upsert({
+    where: { email: 'admin@example.com' },
+    update: {},
+    create: {
+      email: 'admin@example.com',
+      password: require('./utils/bcrypt').hashSync('admin123'), // adjust if using bcrypt
+      role: 'admin'
+    }
+  });
+  console.log('✅ Admin user ready (admin@example.com / admin123)');
 }
 
 const cleanupUploads = require('./utils/cleanup');
@@ -89,5 +130,3 @@ app.listen(PORT, async () => {
   console.log(`📊 Health: http://localhost:${PORT}/health`);
   cleanupUploads(); // Initial cleanup
 });
-
-
