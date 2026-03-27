@@ -42,7 +42,7 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, password) => {
     try {
-      const res = await api.post('/auth/login', { email, password });
+      const res = await api.post('/api/auth/login', { email, password });
       const { token, user } = res.data;
       localStorage.setItem('token', token);
       dispatch({ type: 'LOGIN_SUCCESS', payload: { token, user } });
@@ -55,9 +55,8 @@ export const AuthProvider = ({ children }) => {
 
   const register = async (email, password, role = 'user') => {
     try {
-      const res = await axios.post('/api/auth/register', { email, password, role });
+      const res = await api.post('/api/auth/register', { email, password, role });
       localStorage.setItem('token', res.data.token);
-      axios.defaults.headers.common['Authorization'] = `Bearer ${res.data.token}`;
       dispatch({ type: 'LOGIN_SUCCESS', payload: res.data });
       return res.data;
     } catch (error) {
@@ -67,7 +66,6 @@ export const AuthProvider = ({ children }) => {
 
   const logout = () => {
     localStorage.removeItem('token');
-    delete axios.defaults.headers.common['Authorization'];
     dispatch({ type: 'LOGOUT' });
   };
 

@@ -13,7 +13,7 @@ const Dashboard = () => {
 
   const fetchComplaints = async () => {
     try {
-      const res = await api.get('/complaints');
+      const res = await api.get('/api/complaints');
       setComplaints(res.data);
     } catch (err) {
       setError('Failed to fetch complaints');

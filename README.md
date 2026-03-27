@@ -47,11 +47,11 @@ npm start
 
 ### 1. Backend (Render.com)
 ```
-1. New → Web Service → Connect GitHub repo
-2. PostgreSQL → New Database → Copy DATABASE_URL
-3. Environment → Paste DATABASE_URL, JWT_SECRET (openssl rand -base64 32)
+1. New → Web Service → Connect GitHub repo → Build = `npm install` Command = `npm start`
+2. PostgreSQL → New Database → Copy INTERNAL DATABASE_URL to Environment DATABASE_URL 
+3. Environment → JWT_SECRET=`openssl rand -base64 32`
 4. Add Cloudinary vars (optional)
-5. Deploy → https://your-app.onrender.com
+5. Manual Deploy → Migration complete → https://your-app.onrender.com/health DB OK
 ```
 
 ### 2. Frontend (Vercel)
