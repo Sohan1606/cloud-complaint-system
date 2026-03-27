@@ -70,16 +70,7 @@ async function main() {
   await prisma.$connect();
   console.log('✅ Prisma connected to database');
 
-  // In main() function, after "✅ Prisma connected to database"
-console.log('🌱 Running seed script...');
-try {
-  await require('./prisma/seed.js').main();
-  console.log('✅ Seed complete');
-} catch (seedError) {
-  console.log('Seed skipped (data may already exist)');
-}
-
-  // 🌱 SEED CATEGORIES ON STARTUP (fixes foreign key error)
+  // 🌱 SEED CATEGORIES (no bcrypt needed)
   console.log('🌱 Seeding default categories...');
   try {
     await prisma.category.upsert({
@@ -101,18 +92,6 @@ try {
   } catch (seedError) {
     console.log('Seed skipped (categories may already exist)');
   }
-
-  // Seed admin user if needed
-  await prisma.user.upsert({
-    where: { email: 'admin@example.com' },
-    update: {},
-    create: {
-      email: 'admin@example.com',
-      password: require('./utils/bcrypt').hashSync('admin123'), // adjust if using bcrypt
-      role: 'admin'
-    }
-  });
-  console.log('✅ Admin user ready (admin@example.com / admin123)');
 }
 
 const cleanupUploads = require('./utils/cleanup');
