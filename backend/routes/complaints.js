@@ -22,7 +22,23 @@ router.get('/stats', getStats);
 
 
 // Update status (admin only)
+router.put('/:id', protect, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const updates = req.body;
+    
+    const complaint = await prisma.complaint.update({
+      where: { id },
+      data: updates
+    });
+    
+    res.json(complaint);
+  } catch (error) {
+    res.status(404).json({ message: 'Complaint not found' });
+  }
+});
 router.put('/:id/status', authorize('admin'), updateStatus);
+
 
 module.exports = router;
 
