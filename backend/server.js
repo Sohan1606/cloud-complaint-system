@@ -22,9 +22,8 @@ const morgan = require('morgan');
 app.use(helmet());
 app.use(morgan('combined'));
 app.use(express.static('public'));
+app.use('/uploads', express.static('uploads'));
 app.use('/api/auth', authLimiter);
-app.use('/api/complaints', apiLimiter);
-
 // Health check
 app.get('/health', async (req, res) => {
   try {
@@ -42,11 +41,12 @@ app.get('/', (req, res) => {
 // Cloud-native healthz
 app.get('/healthz', (req, res) => res.json({ status: 'healthy' }));
 
-// Routes
+// Routes (with built-in middleware)
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/complaints', require('./routes/complaints'));
 app.use('/api/stats', require('./routes/stats'));
 app.use('/stats', require('./routes/stats'));
+
 
 // Error handling
 app.use((err, req, res, next) => {
