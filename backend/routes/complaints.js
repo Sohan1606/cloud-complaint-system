@@ -13,7 +13,15 @@ router.use((req, res, next) => {
   next();
 });
 
-// 🔥 PUBLIC DEBUG (before protect)
+// Create complaint
+router.post('/', upload.single('image'), createComplaint);
+
+// Get complaints
+router.get('/', getComplaints);
+router.get('/stats', getStats);
+router.get('/my-complaints', getUserComplaints);
+
+// 🔥 DEBUG ROUTE (PUBLIC for testing)
 router.get('/debug', async (req, res) => {
   try {
     const complaints = await prisma.complaint.findMany({
@@ -31,14 +39,6 @@ router.get('/debug', async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 });
-
-// 🔥 PROTECTED ROUTES (after debug)
-router.use(protect);
-
-router.post('/', upload.single('image'), createComplaint);
-router.get('/', getComplaints);
-router.get('/stats', getStats);
-router.get('/my-complaints', getUserComplaints);
 
 // 🔥 UPDATE ROUTE - WITH FULL LOGS
 router.put('/:id', async (req, res) => {

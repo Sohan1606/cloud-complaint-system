@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import ComplaintCard from '../components/ComplaintCard';
-import api from '../services/api';
+import axios from 'axios';  // 🔥 DIRECT!
 
 const AdminDashboard = () => {
   const [complaints, setComplaints] = useState([]);
@@ -20,17 +20,15 @@ const AdminDashboard = () => {
         return;
       }
       
-const res = await api.get('/complaints/debug');
+const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+const res = await axios.get(`${apiUrl}/complaints/debug`, {  // 🔥 /debug shows ALL + valid IDs
+        headers: { Authorization: `Bearer ${token}` }
+      });
       
       // 🔥 Filter VALID complaints with proper IDs
-      console.log('🔍 RAW API response:', res.data); // DEBUG
-      let validComplaints = [];
-      if (res.data.recent && Array.isArray(res.data.recent)) {
-        validComplaints = res.data.recent;
-      } else if (Array.isArray(res.data)) {
-        validComplaints = res.data;
-      }
-      console.log(`📊 Found ${validComplaints.length} complaints in recent/data`); 
+      const validComplaints = Array.isArray(res.data) 
+        ? res.data.filter(c => c && c.id && c.id.trim() !== '') 
+        : [];
         
       setComplaints(validComplaints);
       console.log(`✅ Loaded ${validComplaints.length} VALID complaints`);
@@ -60,7 +58,18 @@ const res = await api.get('/complaints/debug');
       const token = localStorage.getItem('token');
       if (!token) throw new Error('No token');
 
-const response = await api.put(`/complaints/${encodeURIComponent(id.trim())}`, { status });
+const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+const response = await axios.put(
+        `${apiUrl}/complaints/${encodeURIComponent(id.trim())}`,  // 🔥 URL encode ID
+        { status },
+        { 
+          headers: { 
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          timeout: 5000  // 🔥 5s timeout
+        }
+      );
       
       console.log('✅ SUCCESS:', response.status, response.data);
       
@@ -137,7 +146,7 @@ const response = await api.put(`/complaints/${encodeURIComponent(id.trim())}`, {
               🔄 Refresh
             </button>
             <button
-onClick={() => window.open(`${api.defaults.baseURL}/complaints/debug`, '_blank')} 
+onClick={() => window.open(`${process.env.REACT_APP_API_URL || 'http://localhost:5000/api'}/complaints/debug`, '_blank')} 
               className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
             >
               🔍 Debug API
@@ -145,7 +154,7 @@ onClick={() => window.open(`${api.defaults.baseURL}/complaints/debug`, '_blank')
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-{complaints.map((complaint, index) => (
+            {complaints.map((complaint) => (
               <div key={complaint.id} className="bg-white rounded-xl shadow-md p-6 hover:shadow-xl transition-all border">
                 <div className="mb-3">
                   <ComplaintCard complaint={complaint} />
