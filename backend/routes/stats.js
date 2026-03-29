@@ -1,26 +1,13 @@
 const express = require('express');
+const { protect } = require('../middleware/auth');
+const { getStats } = require('../controllers/statsController');
+
 const router = express.Router();
-const { prisma } = require('../lib/prisma');
 
-router.get('/', async (req, res) => {
-  try {
-    const total = await prisma.complaint.count();
-    const pending = await prisma.complaint.count({
-      where: { status: 'pending' }
-    });
-    const resolved = await prisma.complaint.count({
-      where: { status: 'resolved' }
-    });
+// Protect all stats routes
+router.use(protect);
 
-    res.json({
-      total,
-      pending,
-      resolved
-    });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Error fetching stats' });
-  }
-});
+// GET /api/stats - User-specific stats (protected)
+router.get('/', getStats);
 
 module.exports = router;

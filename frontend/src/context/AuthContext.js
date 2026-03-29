@@ -1,5 +1,7 @@
 import React, { createContext, useContext, useReducer, useEffect } from 'react';
-import api from '../services/api';
+import { authAPI } from '../services/api';
+
+
 
 const AuthContext = createContext();
 
@@ -40,29 +42,31 @@ export const AuthProvider = ({ children }) => {
     // API interceptor handles token
   }, []);
 
-  const login = async (email, password) => {
-    try {
-      const res = await api.post('/api/auth/login', { email, password });
-      const { token, user } = res.data;
-      localStorage.setItem('token', token);
-      dispatch({ type: 'LOGIN_SUCCESS', payload: { token, user } });
-      return res.data;
-    } catch (error) {
-      throw error.response.data.message;
-    }
-  };
+const login = async (email, password) => {
+      try {
+        const res = await authAPI.login(email, password);
+        const { token, user } = res.data;
+        localStorage.setItem('token', token);
+        dispatch({ type: 'LOGIN_SUCCESS', payload: { token, user } });
+        return res.data;
+      } catch (error) {
+        throw error.response.data.message;
+      }
+    };
+
 
 
   const register = async (email, password, role = 'user') => {
-    try {
-      const res = await api.post('/api/auth/register', { email, password, role });
-      localStorage.setItem('token', res.data.token);
-      dispatch({ type: 'LOGIN_SUCCESS', payload: res.data });
-      return res.data;
-    } catch (error) {
-      throw error.response.data.message;
-    }
-  };
+      try {
+        const res = await authAPI.register(email, password, role);
+        localStorage.setItem('token', res.data.token);
+        dispatch({ type: 'LOGIN_SUCCESS', payload: res.data });
+        return res.data;
+      } catch (error) {
+        throw error.response.data.message;
+      }
+    };
+
 
   const logout = () => {
     localStorage.removeItem('token');

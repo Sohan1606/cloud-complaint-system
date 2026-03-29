@@ -19,15 +19,20 @@ services:
       - "5000:5000"
     environment:
       - DATABASE_URL=postgresql://postgres:password@postgres:5432/complaints?schema=public
-      - JWT_SECRET=your-super-secret-jwt-key-change-for-production
+      - JWT_SECRET=super-secret-jwt-for-local-dev-change-in-prod
     volumes:
       - ./backend:/app
       - /app/node_modules
     depends_on:
       - postgres
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:5000/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
     command: >
       sh -c "npx prisma generate &&
-             npx prisma db push &&
              npm run dev"
 
   frontend:

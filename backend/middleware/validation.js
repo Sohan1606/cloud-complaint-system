@@ -15,8 +15,10 @@ const loginSchema = z.object({
 // Complaint validation
 const complaintSchema = z.object({
   title: z.string().min(3, 'Title too short').max(100),
-  description: z.string().min(10, 'Description too short')
+  description: z.string().min(10, 'Description too short'),
+  categoryId: z.string().uuid('Valid category ID required')
 });
+
 
 const statusSchema = z.object({
   status: z.enum(['pending', 'in-progress', 'resolved'])

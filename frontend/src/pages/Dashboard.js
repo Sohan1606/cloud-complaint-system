@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import api from '../services/api';
+import { complaintsAPI } from '../services/api';
 import ComplaintCard from '../components/ComplaintCard';
+
 
 const Dashboard = () => {
   const [complaints, setComplaints] = useState([]);
@@ -12,15 +13,16 @@ const Dashboard = () => {
   }, []);
 
   const fetchComplaints = async () => {
-    try {
-      const res = await api.get('/api/complaints');
-      setComplaints(res.data);
-    } catch (err) {
-      setError('Failed to fetch complaints');
-    } finally {
-      setLoading(false);
-    }
-  };
+      try {
+        const res = await complaintsAPI.getAll();
+        setComplaints(res.data);
+      } catch (err) {
+        setError('Failed to fetch complaints');
+      } finally {
+        setLoading(false);
+      }
+    };
+
 
   if (loading) return <div className="text-center py-12">Loading...</div>;
   if (error) return <div className="text-center py-12 text-red-600">{error}</div>;
