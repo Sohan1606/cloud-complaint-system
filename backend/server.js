@@ -10,7 +10,9 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 // ─── SECURITY & PARSING ────────────────────────────────────────────────────────
-app.use(helmet());
+// Allow images/files to be embedded from the frontend origin (Vercel/localhost).
+// Helmet otherwise sets Cross-Origin-Resource-Policy: same-origin, which blocks /uploads in the browser.
+app.use(helmet({ crossOriginResourcePolicy: false }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -40,6 +42,10 @@ app.use(morgan('dev'));
 
 // ─── STATIC FILE SERVING (FIX /uploads 404) ───────────────────────────────────
 // Serves uploaded images at http://localhost:5000/uploads/<filename>
+app.use('/uploads', (req, res, next) => {
+  res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+  next();
+});
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // ─── RATE LIMITING (applied AFTER static, BEFORE API routes) ──────────────────

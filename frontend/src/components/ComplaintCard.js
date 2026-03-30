@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo, useState } from 'react';
 
 const statusConfig = {
   PENDING: {
@@ -29,28 +29,27 @@ const priorityConfig = {
 };
 
 const ComplaintCard = ({ complaint }) => {
-  // 🚨 HARD GUARD
-  if (!complaint || typeof complaint !== 'object') {
-    return (
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-4">
-        <div className="text-red-600 text-sm font-medium">Invalid complaint data</div>
-      </div>
-    );
-  }
+  const [imgFailed, setImgFailed] = useState(false);
 
-  const status = complaint.status || 'PENDING';
-  const priority = complaint.priority || 'MEDIUM';
+  const isValidComplaint = complaint && typeof complaint === 'object';
+  const safeComplaint = useMemo(
+    () => (isValidComplaint ? complaint : {}),
+    [complaint, isValidComplaint]
+  );
+
+  const status = String(safeComplaint.status || 'PENDING').toUpperCase();
+  const priority = String(safeComplaint.priority || 'MEDIUM').toUpperCase();
 
   const statusInfo = statusConfig[status] || statusConfig.PENDING;
   const priorityInfo = priorityConfig[priority] || priorityConfig.MEDIUM;
 
   const userEmail =
-    typeof complaint?.user?.email === 'string'
-      ? complaint.user.email
+    typeof safeComplaint?.user?.email === 'string'
+      ? safeComplaint.user.email
       : 'unknown@example.com';
 
-  const createdDate = complaint?.createdAt
-    ? new Date(complaint.createdAt).toLocaleDateString('en-IN', {
+  const createdDate = safeComplaint?.createdAt
+    ? new Date(safeComplaint.createdAt).toLocaleDateString('en-IN', {
         day: '2-digit',
         month: 'short',
         year: 'numeric',
@@ -58,33 +57,50 @@ const ComplaintCard = ({ complaint }) => {
     : 'Just now';
 
   const shortId =
-    typeof complaint?.id === 'string'
-      ? complaint.id.slice(0, 8)
+    typeof safeComplaint?.id === 'string'
+      ? safeComplaint.id.slice(0, 8)
       : '--------';
 
   // Image URL (supports both new + old fields) and works in prod.
-  let imageUrl = null;
   const apiBase = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
-  const backendOrigin = apiBase.replace(/\/api\/?$/, '');
+  const backendOrigin = apiBase.includes('/api')
+    ? apiBase.replace(/\/api\/?$/, '')
+    : apiBase.replace(/\/$/, '');
 
-  if (typeof complaint?.imageUrl === 'string') {
-    imageUrl = complaint.imageUrl.startsWith('http')
-      ? complaint.imageUrl
-      : `${backendOrigin}/${complaint.imageUrl.replace(/^\//, '')}`;
-  } else if (typeof complaint?.image === 'string') {
-    // fallback for old data (optional safety)
-    imageUrl = complaint.image.startsWith('http')
-      ? complaint.image
-      : `${backendOrigin}/${complaint.image.replace(/^\//, '')}`;
-  }
+  const { rawImage, imageUrl } = useMemo(() => {
+    const raw =
+      typeof safeComplaint?.imageUrl === 'string'
+        ? safeComplaint.imageUrl
+        : typeof safeComplaint?.imageURL === 'string'
+          ? safeComplaint.imageURL
+          : typeof safeComplaint?.image_url === 'string'
+            ? safeComplaint.image_url
+            : typeof safeComplaint?.image === 'string'
+              ? safeComplaint.image
+              : null;
+
+    const cleaned = typeof raw === 'string' ? raw.trim() : null;
+    const resolved =
+      typeof cleaned === 'string' && cleaned.length > 0
+        ? cleaned.startsWith('http')
+          ? cleaned
+          : `${backendOrigin}/${cleaned.replace(/^\//, '')}`
+        : null;
+
+    return { rawImage: cleaned, imageUrl: resolved };
+  }, [backendOrigin, safeComplaint]);
 
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden hover:shadow-md transition">
       <div className="p-4">
+        {!isValidComplaint ? (
+          <div className="text-red-600 text-sm font-medium">Invalid complaint data</div>
+        ) : (
+          <>
         <div className="flex items-start justify-between gap-3">
           <h3 className="text-base font-bold text-slate-900 leading-tight line-clamp-2">
-            {typeof complaint.title === 'string'
-              ? complaint.title
+            {typeof safeComplaint.title === 'string'
+              ? safeComplaint.title
               : 'Untitled Complaint'}
           </h3>
           <span
@@ -105,21 +121,32 @@ const ComplaintCard = ({ complaint }) => {
         </div>
 
         <p className="mt-3 text-sm text-slate-600 line-clamp-2">
-          {typeof complaint.description === 'string'
-            ? complaint.description
+          {typeof safeComplaint.description === 'string'
+            ? safeComplaint.description
             : 'No description provided.'}
         </p>
 
-        {imageUrl && (
-          <div className="mt-4 rounded-xl overflow-hidden bg-slate-100 border border-slate-100">
+        <div className="mt-4 rounded-xl overflow-hidden bg-slate-100 border border-slate-100">
+          {imageUrl && !imgFailed ? (
             <img
               src={imageUrl}
               alt="Complaint evidence"
               className="w-full h-44 object-cover"
-              onError={(e) => (e.currentTarget.style.display = 'none')}
+              onError={() => setImgFailed(true)}
               loading="lazy"
             />
-          </div>
+          ) : (
+            <div className="w-full h-44 flex flex-col items-center justify-center text-slate-400 text-sm gap-1">
+              <div>{imageUrl ? 'Image failed to load' : 'No image uploaded'}</div>
+              {process.env.NODE_ENV !== 'production' && rawImage ? (
+                <div className="text-[11px] text-slate-400 font-mono max-w-full px-4 truncate">
+                  {rawImage}
+                </div>
+              ) : null}
+            </div>
+          )}
+        </div>
+          </>
         )}
       </div>
 
