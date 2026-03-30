@@ -26,10 +26,17 @@ const res = await axios.get(`${apiUrl}/complaints/debug`, {  // 🔥 /debug show
       });
       
       // 🔥 Filter VALID complaints with proper IDs
-      const validComplaints = Array.isArray(res.data) 
-        ? res.data.filter(c => c && c.id && c.id.trim() !== '') 
-        : [];
-        
+      console.log('DEBUG RAW:', res.data);
+      const rawData = res.data;
+      let validComplaints = [];
+      
+      if (Array.isArray(rawData)) {
+        validComplaints = rawData.filter(c => c && c.id);
+      } else if (rawData.recent && Array.isArray(rawData.recent)) {
+        validComplaints = rawData.recent.filter(c => c && c.id);
+      }
+      
+      console.log('LOADED RAW:', validComplaints.length, 'complaints');
       setComplaints(validComplaints);
       console.log(`✅ Loaded ${validComplaints.length} VALID complaints`);
     } catch (err) {

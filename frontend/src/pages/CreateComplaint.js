@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { complaintsAPI } from '../services/api';
+// import { complaintsAPI } from '../services/api';
 import { useNavigate } from 'react-router-dom';
 
 const CreateComplaint = () => {
@@ -14,30 +14,52 @@ const CreateComplaint = () => {
   const [success, setSuccess] = useState('');
   const navigate = useNavigate();
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError('');
-    setSuccess('');
-    setLoading(true);
+ const handleSubmit = async (e) => {
+  e.preventDefault();
+  setError('');
+  setSuccess('');
+  setLoading(true);
 
-    const data = new FormData();
-    data.append('title', formData.title);
-    data.append('description', formData.description);
-    data.append('categoryId', formData.categoryId);
-    if (image) {
-      data.append('image', image);
-    }
+  const token = localStorage.getItem('token');
+  console.log('🔑 TOKEN:', token ? 'EXISTS' : 'MISSING'); // DEBUG
+  
+  if (!token) {
+    setError('❌ Please login first');
+    setLoading(false);
+    return;
+  }
 
-    try {
-      await complaintsAPI.create(data);
-      setSuccess('Complaint created successfully!');
+  const data = new FormData();
+  data.append('title', formData.title);
+  data.append('description', formData.description);
+  data.append('categoryId', formData.categoryId);
+  if (image) {
+    data.append('image', image);
+  }
+
+  try {
+    // 🔥 DIRECT BACKEND URL + TOKEN = 201!
+    const res = await fetch('http://localhost:5000/api/complaints', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`  // TOKEN HEADER!
+      },
+      body: data
+    });
+
+    if (res.ok) {
+      setSuccess('✅ Complaint created!');
       setTimeout(() => navigate('/dashboard'), 2000);
-    } catch (err) {
-      setError(err.response?.data?.message || 'Failed to create complaint');
-    } finally {
-      setLoading(false);
+    } else {
+      const errorText = await res.text();
+      setError(`Error ${res.status}: ${errorText}`);
     }
-  };
+  } catch (err) {
+    setError('Network error');
+  } finally {
+    setLoading(false);
+  }
+};
 
   const handleChange = (e) => {
     setFormData({

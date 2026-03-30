@@ -1,65 +1,27 @@
 const fs = require('fs');
 const { prisma } = require('../lib/prisma');
 
-// Create complaint
-const createComplaint = async (req, res) => {
-  try {
-    const { title, description, categoryId } = req.body;
-    const userId = req.user.userId;
-
-    // Validate input
-    if (!title || !description || !categoryId) {
-      return res
-        .status(400)
-        .json({ message: 'Title, description, and categoryId are required' });
-    }
-
-    let imageUrl = null;
-    let imagePublicId = null;
-
-    if (req.file) {
-      // Optional Cloudinary
-      try {
-        const cloudinary = require('../utils/cloudinary');
-        const result = await cloudinary.uploader.upload(req.file.path);
-        imagePublicId = result.public_id;
-        imageUrl = result.secure_url;
-        fs.unlinkSync(req.file.path);
-      } catch (cloudError) {
-        console.log('Cloudinary skipped:', cloudError.message);
-        imageUrl = `/uploads/${req.file.filename}`;
-      }
-    }
-
-    const complaint = await prisma.complaint.create({
-      data: {
-        title,
-        description,
-        categoryId,  // scalar FK – Prisma links to Category
-        imageUrl,
-        imagePublicId,
-        userId       // scalar FK – links to User
-      },
-      include: {
-        user: {
-          select: { email: true }
-        },
-        category: true
-      }
-    });
-
-    res.status(201).json(complaint);
-  } catch (error) {
-    console.error('Complaint creation error:', error);
-    res.status(500).json({ message: error.message });
-  }
-};
+/* DISABLED - POST now inline in routes/complaints.js to avoid req.user crash
+const createComplaint = async (req, res) => { ... }; */
 
 // Get all complaints
 const getComplaints = async (req, res) => {
   try {
     let complaints;
-    if (req.user.role === 'admin') {
+
+    // 🔥 GUEST SUPPORT: Recent complaints (like /debug but with relations)
+    if (!req.user) {
+      console.log('👤 Guest access - returning recent complaints');
+      complaints = await prisma.complaint.findMany({
+        include: {
+          user: { select: { email: true, id: true } },
+          category: true
+        },
+        orderBy: { createdAt: 'desc' },
+        take: 10  // Limit for guests
+      });
+    } else if (req.user.role === 'admin') {
+      console.log('👑 Admin - all complaints');
       complaints = await prisma.complaint.findMany({
         include: {
           user: true,
@@ -68,6 +30,7 @@ const getComplaints = async (req, res) => {
         orderBy: { createdAt: 'desc' }
       });
     } else {
+      console.log(`🔐 User ${req.user.userId} - own complaints`);
       complaints = await prisma.complaint.findMany({
         where: { userId: req.user.userId },
         include: {
@@ -78,8 +41,10 @@ const getComplaints = async (req, res) => {
       });
     }
 
+    console.log(`📋 Returning ${complaints.length} complaints`);
     res.json(complaints);
   } catch (error) {
+    console.error('getComplaints error:', error);
     res.status(500).json({ message: error.message });
   }
 };
@@ -168,7 +133,7 @@ const updateComplaint = async (req, res) => {
 };
 
 module.exports = {
-  createComplaint,
+  // createComplaint disabled - inline in routes
   getComplaints,
   getStats,
   updateStatus,

@@ -22,6 +22,7 @@ const morgan = require('morgan');
 app.use(helmet());
 app.use(morgan('combined'));
 app.use(express.static('public'));
+app.use(express.static('uploads', { index: false })); // ✅ Serve uploads dir for images
 app.use('/api/auth', authLimiter);
 app.use('/api/complaints', apiLimiter);
 
