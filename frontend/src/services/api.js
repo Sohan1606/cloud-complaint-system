@@ -1,15 +1,17 @@
 import axios from 'axios';
 
+// ✅ Use env variable for production, fallback to localhost for dev
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
+  timeout: 10000,
   headers: {
     'Content-Type': 'application/json',
   },
 });
 
-// Request interceptor - add token
+// ✅ REQUEST INTERCEPTOR: Attach JWT token to every request
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('token');
@@ -21,39 +23,25 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// Response interceptor - handle 401
+// ✅ RESPONSE INTERCEPTOR: Handle 401 globally
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401 || error.response?.status === 403) {
+    if (error.response?.status === 401) {
+      // Token expired or invalid — clear and redirect to login
       localStorage.removeItem('token');
-      window.location.href = '/login';
+      localStorage.removeItem('user');
+      if (window.location.pathname !== '/login') {
+        window.location.href = '/login';
+      }
     }
     return Promise.reject(error);
   }
 );
 
-// Auth API
-export const authAPI = {
-  login: (email, password) => api.post('/auth/login', { email, password }),
-  register: (email, password, role = 'user') => api.post('/auth/register', { email, password, role }),
-};
+// Named API wrappers for components
+export const authAPI = api;
+export const complaintsAPI = api;
 
-// Complaints API
-export const complaintsAPI = {
-  getAll: () => api.get('/complaints'),
-  create: (data) => api.post('/complaints', data, {
-    headers: { 'Content-Type': 'multipart/form-data' }
-  }),
-  updateStatus: (id, status) => api.put(`/complaints/${id}`, { status }),
-  getUser: () => api.get('/complaints'), // same as getAll for user
-};
-
-// Stats API
-export const statsAPI = {
-  getUserStats: () => api.get('/stats'),
-  getAdminStats: () => api.get('/stats'),
-};
-
+// Default export too (backward compat)
 export default api;
-

@@ -1,91 +1,125 @@
 import React, { useState } from 'react';
-// import { complaintsAPI } from '../services/api';
 import { useNavigate } from 'react-router-dom';
+
+const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
 
 const CreateComplaint = () => {
   const [formData, setFormData] = useState({
     title: '',
     description: '',
-    categoryId: 'default-category-id' // Default - replace with API fetch later
+    categoryId: 'default-category-id'
   });
+
   const [image, setImage] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const navigate = useNavigate();
 
- const handleSubmit = async (e) => {
-  e.preventDefault();
-  setError('');
-  setSuccess('');
-  setLoading(true);
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+    setSuccess('');
+    setLoading(true);
 
-  const token = localStorage.getItem('token');
-  console.log('🔑 TOKEN:', token ? 'EXISTS' : 'MISSING'); // DEBUG
-  
-  if (!token) {
-    setError('❌ Please login first');
-    setLoading(false);
-    return;
-  }
+    const token = localStorage.getItem('token');
 
-  const data = new FormData();
-  data.append('title', formData.title);
-  data.append('description', formData.description);
-  data.append('categoryId', formData.categoryId);
-  if (image) {
-    data.append('image', image);
-  }
-
-  try {
-    // 🔥 DIRECT BACKEND URL + TOKEN = 201!
-    const res = await fetch('http://localhost:5000/api/complaints', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token}`  // TOKEN HEADER!
-      },
-      body: data
-    });
-
-    if (res.ok) {
-      setSuccess('✅ Complaint created!');
-      setTimeout(() => navigate('/dashboard'), 2000);
-    } else {
-      const errorText = await res.text();
-      setError(`Error ${res.status}: ${errorText}`);
+    if (!token) {
+      setError('❌ Please login first');
+      setLoading(false);
+      return;
     }
-  } catch (err) {
-    setError('Network error');
-  } finally {
-    setLoading(false);
-  }
-};
+
+    const data = new FormData();
+    data.append('title', formData.title);
+    data.append('description', formData.description);
+    data.append('categoryId', formData.categoryId);
+    if (image) data.append('image', image);
+
+    try {
+      const res = await fetch(`${API_BASE}/complaints`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: data,
+      });
+
+      let result;
+
+      // ✅ SAFE JSON PARSE (prevents crash)
+      try {
+        result = await res.json();
+      } catch {
+        result = {};
+      }
+
+      if (res.ok) {
+        setSuccess('✅ Complaint created successfully!');
+
+        setFormData({
+          title: '',
+          description: '',
+          categoryId: 'default-category-id'
+        });
+        setImage(null);
+
+        setTimeout(() => navigate('/dashboard'), 1500);
+      } else {
+        // ✅ FORCE STRING ONLY
+        const message =
+          typeof result?.message === 'string'
+            ? result.message
+            : `Error ${res.status}`;
+
+        setError(message);
+      }
+    } catch (err) {
+      // ✅ NEVER PASS OBJECT
+      setError(
+        typeof err?.message === 'string'
+          ? err.message
+          : '❌ Network error'
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleChange = (e) => {
-    setFormData({
-      ...formData,
+    setFormData(prev => ({
+      ...prev,
       [e.target.name]: e.target.value
-    });
+    }));
   };
 
   return (
-    <div className="max-w-2xl mx-auto bg-white rounded-xl shadow-md p-8 mt-8">
-      <h1 className="text-3xl font-bold text-gray-900 mb-6 text-center">Create New Complaint</h1>
-      
-      {error && (
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-6 p-4">
+    <div className="min-h-[calc(100vh-5rem)] bg-slate-50">
+      <div className="max-w-2xl mx-auto bg-white rounded-2xl shadow-sm border border-slate-100 p-8 mt-10">
+        <h1 className="text-3xl font-bold text-slate-900 mb-2 text-center">
+          Create a complaint
+        </h1>
+        <p className="text-sm text-slate-500 mb-8 text-center max-w-md mx-auto">
+          Provide clear details and, if possible, an image. This helps admins resolve issues faster.
+        </p>
+
+      {/* ✅ SAFE ERROR RENDER */}
+      {error && typeof error === 'string' && (
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6 text-sm">
           {error}
         </div>
       )}
-      
-      {success && (
-        <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-6 p-4">
+
+      {/* ✅ SAFE SUCCESS RENDER */}
+      {success && typeof success === 'string' && (
+        <div className="bg-emerald-50 border border-emerald-200 text-emerald-700 px-4 py-3 rounded-lg mb-6 text-sm">
           {success}
         </div>
       )}
-      
-      <form onSubmit={handleSubmit} encType="multipart/form-data">
-        <div className="mb-6">
+
+      <form onSubmit={handleSubmit} encType="multipart/form-data" className="space-y-6">
+        {/* Title */}
+        <div>
           <label className="block text-gray-700 text-sm font-bold mb-2">
             Title *
           </label>
@@ -94,12 +128,13 @@ const CreateComplaint = () => {
             name="title"
             value={formData.title}
             onChange={handleChange}
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
             required
           />
         </div>
-        
-        <div className="mb-6">
+
+        {/* Description */}
+        <div>
           <label className="block text-gray-700 text-sm font-bold mb-2">
             Description *
           </label>
@@ -108,12 +143,13 @@ const CreateComplaint = () => {
             rows={4}
             value={formData.description}
             onChange={handleChange}
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-vertical"
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
             required
           />
         </div>
 
-        <div className="mb-6">
+        {/* Category */}
+        <div>
           <label className="block text-gray-700 text-sm font-bold mb-2">
             Category ID *
           </label>
@@ -122,42 +158,46 @@ const CreateComplaint = () => {
             name="categoryId"
             value={formData.categoryId}
             onChange={handleChange}
-            placeholder="default-category-id"
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
             required
           />
         </div>
-        
-        <div className="mb-8">
+
+        {/* Image */}
+        <div>
           <label className="block text-gray-700 text-sm font-bold mb-2">
             Image (Optional)
           </label>
           <input
             type="file"
             onChange={(e) => setImage(e.target.files[0])}
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg"
             accept="image/*"
           />
         </div>
-        
+
+        {/* Submit */}
         <button
           type="submit"
           disabled={loading}
-          className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg transition duration-200 focus:ring-4 focus:ring-green-300 disabled:opacity-50"
+          className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-6 rounded-xl shadow-sm transition disabled:opacity-50"
         >
           {loading ? 'Creating...' : 'Submit Complaint'}
         </button>
       </form>
 
       <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-        <h3 className="font-semibold text-blue-900 mb-2">Quick Test:</h3>
-        <p className="text-sm text-blue-800">
-          Use categoryId: <code className="bg-blue-200 px-2 py-1 rounded font-mono text-xs">default-category-id</code>
+        <p className="text-xs text-blue-800">
+          Default category in this demo is
+          <code className="ml-1 bg-blue-200 px-2 py-0.5 rounded">
+            default-category-id
+          </code>
+          . You can change this later when you add real categories.
         </p>
+      </div>
       </div>
     </div>
   );
 };
 
 export default CreateComplaint;
-

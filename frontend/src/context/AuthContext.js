@@ -42,30 +42,43 @@ export const AuthProvider = ({ children }) => {
     // API interceptor handles token
   }, []);
 
-const login = async (email, password) => {
-      try {
-        const res = await authAPI.login(email, password);
-        const { token, user } = res.data;
-        localStorage.setItem('token', token);
-        dispatch({ type: 'LOGIN_SUCCESS', payload: { token, user } });
-        return res.data;
-      } catch (error) {
-        throw error.response.data.message;
-      }
-    };
+  const login = async (email, password) => {
+    try {
+      // POST /api/auth/login (base URL is configured in authAPI)
+      const res = await authAPI.post('/auth/login', { email, password });
+      const { token, user } = res.data;
+      localStorage.setItem('token', token);
+      dispatch({ type: 'LOGIN_SUCCESS', payload: { token, user } });
+      return res.data;
+    } catch (error) {
+      // Always re-throw a plain string so callers can safely render it.
+      const message =
+        error?.response?.data?.message ||
+        error?.message ||
+        'Login failed';
+      throw message;
+    }
+  };
 
 
 
   const register = async (email, password, role = 'user') => {
-      try {
-        const res = await authAPI.register(email, password, role);
-        localStorage.setItem('token', res.data.token);
-        dispatch({ type: 'LOGIN_SUCCESS', payload: res.data });
-        return res.data;
-      } catch (error) {
-        throw error.response.data.message;
-      }
-    };
+    try {
+      // POST /api/auth/register
+      const res = await authAPI.post('/auth/register', { email, password, role });
+      const { token, user } = res.data;
+      localStorage.setItem('token', token);
+      dispatch({ type: 'LOGIN_SUCCESS', payload: { token, user } });
+      return res.data;
+    } catch (error) {
+      // Always re-throw a plain string so callers can safely render it.
+      const message =
+        error?.response?.data?.message ||
+        error?.message ||
+        'Registration failed';
+      throw message;
+    }
+  };
 
 
   const logout = () => {

@@ -1,112 +1,102 @@
 const express = require('express');
 const cors = require('cors');
-const dotenv = require('dotenv');
-const { prisma } = require('./lib/prisma');
-
-dotenv.config();
+const helmet = require('helmet');
+const morgan = require('morgan');
+const rateLimit = require('express-rate-limit');
+const path = require('path');
+require('dotenv').config();
 
 const app = express();
+const PORT = process.env.PORT || 5000;
 
-app.set('trust proxy', 1);
-
-// Middleware
-app.use(cors({ origin: '*' }));
+// ─── SECURITY & PARSING ────────────────────────────────────────────────────────
+app.use(helmet());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Rate limiting & security
-const { authLimiter, apiLimiter } = require('./middleware/rateLimit');
-const helmet = require('helmet');
-const morgan = require('morgan');
+// ─── CORS ─────────────────────────────────────────────────────────────────────
+// Allow both local dev and your deployed Vercel URL
+const allowedOrigins = [
+  'http://localhost:3000',
+  process.env.FRONTEND_URL, // e.g. https://cloud-complaint-system.vercel.app
+].filter(Boolean);
 
-app.use(helmet());
-app.use(morgan('combined'));
-app.use(express.static('public'));
-app.use(express.static('uploads', { index: false })); // ✅ Serve uploads dir for images
-app.use('/api/auth', authLimiter);
-app.use('/api/complaints', apiLimiter);
+app.use(cors({
+  origin: (origin, callback) => {
+    // Allow requests with no origin (curl, Postman, mobile)
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error(`CORS: Origin ${origin} not allowed`));
+    }
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+}));
 
-// Health check
+// ─── LOGGING ───────────────────────────────────────────────────────────────────
+app.use(morgan('dev'));
+
+// ─── STATIC FILE SERVING (FIX /uploads 404) ───────────────────────────────────
+// Serves uploaded images at http://localhost:5000/uploads/<filename>
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
+// ─── RATE LIMITING (applied AFTER static, BEFORE API routes) ──────────────────
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 min
+  max: 200,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many requests, please try again later.' },
+});
+app.use('/api/', apiLimiter);
+
+// ─── API ROUTES ────────────────────────────────────────────────────────────────
+app.use('/api/auth',       require('./routes/auth'));
+app.use('/api/complaints', require('./routes/complaints'));
+app.use('/api/stats',      require('./routes/stats'));
+
+// ─── HEALTH CHECK ──────────────────────────────────────────────────────────────
 app.get('/health', async (req, res) => {
   try {
+    const { prisma } = require('./lib/prisma');
     await prisma.$queryRaw`SELECT 1`;
-    res.json({ status: 'OK', db: 'connected', timestamp: new Date() });
-  } catch (error) {
-    res.status(500).json({ status: 'DB Error', timestamp: new Date() });
+    res.json({
+      status: 'OK',
+      db: 'connected',
+      uptime: Math.floor(process.uptime()) + 's',
+      timestamp: new Date().toISOString(),
+    });
+  } catch (err) {
+    res.status(500).json({ status: 'ERROR', db: 'disconnected', error: err.message });
   }
 });
 
-app.get('/', (req, res) => {
-  res.send('Cloud Complaint System API is running 🚀');
-});
-
-// Cloud-native healthz
 app.get('/healthz', (req, res) => res.json({ status: 'healthy' }));
 
-// Routes
-app.use('/api/auth', require('./routes/auth'));
-app.use('/api/complaints', require('./routes/complaints'));
-app.use('/api/stats', require('./routes/stats'));
-app.use('/stats', require('./routes/stats'));
+// ─── 404 HANDLER ───────────────────────────────────────────────────────────────
+app.use((req, res) => {
+  res.status(404).json({ error: `Route ${req.method} ${req.originalUrl} not found` });
+});
 
-// Error handling
+// ─── GLOBAL ERROR HANDLER ──────────────────────────────────────────────────────
 app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).json({ message: 'Something went wrong!' });
+  console.error('❌ Unhandled error:', err.message);
+  res.status(500).json({ message: 'Something went wrong!', error: err.message });
 });
 
-const PORT = process.env.PORT || 5000;
-
-async function main() {
-  if (!process.env.DATABASE_URL) {
-    console.error('DATABASE_URL not set!');
-    process.exit(1);
-  }
-
-  if (!process.env.JWT_SECRET) {
-    console.error('JWT_SECRET not set!');
-    process.exit(1);
-  }
-
-  await prisma.$connect();
-  console.log('✅ Prisma connected to database');
-
-  // 🌱 SEED CATEGORIES (no bcrypt needed)
-  console.log('🌱 Seeding default categories...');
-  try {
-    await prisma.category.upsert({
-      where: { name: 'General' },
-      update: {},
-      create: { name: 'General', color: '#3B82F6' }
-    });
-    await prisma.category.upsert({
-      where: { name: 'Technical' },
-      update: {},
-      create: { name: 'Technical', color: '#10B981' }
-    });
-    await prisma.category.upsert({
-      where: { name: 'Billing' },
-      update: {},
-      create: { name: 'Billing', color: '#F59E0B' }
-    });
-    console.log('✅ Default categories seeded');
-  } catch (seedError) {
-    console.log('Seed skipped (categories may already exist)');
-  }
-}
-
-const cleanupUploads = require('./utils/cleanup');
-
-// Graceful cleanup on shutdown
-process.on('SIGTERM', async () => {
-  console.log('SIGTERM received, cleaning up');
-  await prisma.$disconnect();
-  process.exit(0);
-});
-
-app.listen(PORT, async () => {
-  await main();
+// ─── START SERVER ──────────────────────────────────────────────────────────────
+const server = app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
-  console.log(`📊 Health: http://localhost:${PORT}/health`);
-  cleanupUploads(); // Initial cleanup
+  console.log(`📋 Health: http://localhost:${PORT}/health`);
+  console.log(`🔍 Debug:  http://localhost:${PORT}/api/complaints/debug`);
 });
+
+// Graceful shutdown
+process.on('SIGTERM', () => {
+  console.log('SIGTERM received, shutting down...');
+  server.close(() => process.exit(0));
+});
+
+module.exports = app;

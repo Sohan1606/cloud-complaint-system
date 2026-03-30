@@ -22,23 +22,34 @@ const Register = () => {
       navigate('/dashboard');
 
     } catch (err) {
-      setError(err);
+      const message =
+        typeof err === 'string'
+          ? err
+          : typeof err?.message === 'string'
+            ? err.message
+            : 'Registration failed';
+
+      setError(message);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="max-w-md mx-auto bg-white rounded-xl shadow-md p-8">
-      <h2 className="text-3xl font-bold text-gray-900 mb-6 text-center">Register</h2>
+    <div className="min-h-screen bg-slate-50 flex items-center justify-center py-10 px-4">
+      <div className="w-full max-w-md bg-white rounded-2xl shadow-sm border border-slate-100 p-8">
+      <h2 className="text-3xl font-bold text-slate-900 mb-2 text-center">Create account</h2>
+      <p className="text-sm text-slate-500 mb-6 text-center">
+        Sign up to start submitting and tracking complaints.
+      </p>
       
       {error && (
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-6">
+        <div className="bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 rounded-lg mb-5">
           {error}
         </div>
       )}
       
-      <form onSubmit={handleSubmit}>
+      <form onSubmit={handleSubmit} className="space-y-6">
         <div className="mb-6">
           <label className="block text-gray-700 text-sm font-bold mb-2">
             Email
@@ -83,15 +94,17 @@ const Register = () => {
         <button
           type="submit"
           disabled={loading}
-          className="w-full bg-green-600 text-white py-3 px-4 rounded-lg font-bold hover:bg-green-700 focus:ring-2 focus:ring-green-500 disabled:opacity-50"
+          className="w-full bg-green-600 text-white py-3 px-4 rounded-xl font-semibold hover:bg-green-700 focus:ring-2 focus:ring-green-500 disabled:opacity-50 shadow-sm"
         >
           {loading ? 'Creating Account...' : 'Create Account'}
         </button>
       </form>
       
-      <p className="mt-6 text-center text-gray-600">
-        Already have an account? <Link to="/login" className="text-blue-600 hover:underline font-medium">Sign in</Link>
+      <p className="mt-6 text-center text-slate-500 text-sm">
+        Already have an account?{' '}
+        <Link to="/login" className="text-blue-600 hover:underline font-medium">Sign in</Link>
       </p>
+      </div>
     </div>
   );
 };

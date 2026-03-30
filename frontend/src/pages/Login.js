@@ -24,24 +24,35 @@ const Login = () => {
 
       addNotification('Welcome back!', 'success');
     } catch (err) {
-      setError(err);
-      addNotification(err, 'error');
+      const message =
+        typeof err === 'string'
+          ? err
+          : typeof err?.message === 'string'
+            ? err.message
+            : 'Login failed';
+
+      setError(message);
+      addNotification(message, 'error');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="max-w-md mx-auto bg-white rounded-xl shadow-md p-8">
-      <h2 className="text-3xl font-bold text-gray-900 mb-6 text-center">Login</h2>
+    <div className="min-h-screen bg-slate-50 flex items-center justify-center py-10 px-4">
+      <div className="w-full max-w-md bg-white rounded-2xl shadow-sm border border-slate-100 p-8">
+      <h2 className="text-3xl font-bold text-slate-900 mb-2 text-center">Welcome back</h2>
+      <p className="text-sm text-slate-500 mb-6 text-center">
+        Sign in to manage and track your complaints.
+      </p>
       
       {error && (
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-6">
+        <div className="bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 rounded-lg mb-5">
           {error}
         </div>
       )}
       
-      <form onSubmit={handleSubmit}>
+      <form onSubmit={handleSubmit} className="space-y-6">
         <div className="mb-6">
           <label className="block text-gray-700 text-sm font-bold mb-2">
             Email
@@ -71,15 +82,17 @@ const Login = () => {
         <button
           type="submit"
           disabled={loading}
-          className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg font-bold hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+          className="w-full bg-blue-600 text-white py-3 px-4 rounded-xl font-semibold hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 disabled:opacity-50 shadow-sm"
         >
           {loading ? 'Signing In...' : 'Sign In'}
         </button>
       </form>
       
-      <p className="mt-6 text-center text-gray-600">
-        Don't have an account? <Link to="/register" className="text-blue-600 hover:underline font-medium">Sign up</Link>
+      <p className="mt-6 text-center text-slate-500 text-sm">
+        Don't have an account?{' '}
+        <Link to="/register" className="text-blue-600 hover:underline font-medium">Sign up</Link>
       </p>
+      </div>
     </div>
   );
 };

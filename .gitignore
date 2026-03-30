@@ -1,0 +1,23 @@
+## Root ignores (repo-wide)
+node_modules/
+.env
+.env.*
+*.log
+
+## OS/editor
+.DS_Store
+Thumbs.db
+
+## Prisma / SQLite dev artifacts
+backend/prisma/dev.db
+backend/prisma/dev.db-journal
+backend/prisma/*.db
+backend/prisma/*.db-journal
+
+## Uploaded files (local dev)
+backend/uploads/
+
+## Builds
+frontend/build/
+frontend/dist/
+backend/dist/

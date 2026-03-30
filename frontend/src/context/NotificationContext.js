@@ -19,8 +19,17 @@ const [, dispatch] = useReducer(notificationReducer, []);
 
 
   const addNotification = (message, type = 'success') => {
+    const safeMessage =
+      typeof message === 'string'
+        ? message
+        : message instanceof Error
+          ? message.message
+          : typeof message?.message === 'string'
+            ? message.message
+            : 'Something went wrong';
+
     const id = Date.now();
-    const notification = { id, message, type };
+    const notification = { id, message: safeMessage, type };
     dispatch({ type: 'ADD_NOTIFICATION', payload: notification });
     
     // Auto-remove after 4 seconds
@@ -30,7 +39,7 @@ const [, dispatch] = useReducer(notificationReducer, []);
     
     // Show toast
     const toastType = type === 'error' ? toast.error : toast.success;
-    toastType(message);
+    toastType(safeMessage);
   };
 
   const removeNotification = (id) => {
