@@ -190,7 +190,7 @@ const AdminDashboard = () => {
             {filtered.map((complaint, index) => (
               <div
                 key={complaint?.id || index}
-                className="bg-white rounded-2xl shadow-sm border border-slate-100 p-4 flex flex-col gap-3 hover:shadow-md transition"
+                className="flex flex-col gap-3"
               >
                 <ComplaintCard complaint={complaint || {}} />
 

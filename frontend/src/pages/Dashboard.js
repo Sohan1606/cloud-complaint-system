@@ -85,12 +85,7 @@ const Dashboard = () => {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {complaints.map((complaint) => (
-              <div
-                key={complaint?.id}
-                className="bg-white rounded-2xl shadow-sm border border-slate-100 p-4 hover:shadow-md transition"
-              >
-                <ComplaintCard complaint={complaint} />
-              </div>
+              <ComplaintCard key={complaint?.id} complaint={complaint} />
             ))}
           </div>
         )}
